@@ -1,0 +1,71 @@
+
+BENCHMARKS = [
+  "cigri"
+]
+
+LANGUAGES = {
+  "R-tidyverse": "R",
+  "awk": "awk",
+  "mawk": "mawk",
+  "python-pandas": "py",
+  "python-polars": "py",
+}
+
+DATASETS = {
+  "cigri": "datasets/data_cigri_2013_2023.csv"
+}
+
+MAX_ITER = 3
+ITERATIONS = range(0, MAX_ITER)
+
+
+rule all:
+  input:
+    "data/all/sizes.csv",
+    "data/all/expes.csv",
+
+rule get_size:
+  input:
+    "flake.nix",
+    "workflow/envs/{lang}.nix",
+    script="workflow/scripts/get_size_nix_env.py"
+  output:
+    "data/sizes/{lang}.csv"
+  params:
+    system = "aarch64-darwin"
+  shell:
+    "python3 {input.script} {wildcards.lang} {params.system} > {output}"
+
+
+rule run_expe:
+  input:
+    script=lambda w: f"benchmarks/{w.bench}/{w.lang}/main.{LANGUAGES[w.lang]}",
+    timing_script=lambda w: f"workflow/scripts/timing_{LANGUAGES[w.lang]}.sh",
+  wildcard_constraints:
+    bench="|".join(BENCHMARKS)
+  params:
+    dataset=lambda w: DATASETS[w.bench]
+  output:
+    "data/{bench}/{lang}/{iter}.dat"
+  shell:
+    "nix develop .#{wildcards.lang} --command ./{input.timing_script} {input.script} {params.dataset} {wildcards.bench} {wildcards.lang} > {output}"
+
+
+rule merge_sizes:
+  input:
+    data=expand("data/sizes/{lang}.csv",lang=LANGUAGES.keys())
+  output:
+    "data/all/sizes.csv"
+  shell:
+    "cat {input.data} > {output}"
+
+rule merge_expes:
+  input:
+    data=expand("data/{bench}/{lang}/{iter}.dat",\
+           bench=BENCHMARKS,\
+           lang=LANGUAGES.keys(),\
+           iter=ITERATIONS)
+  output:
+    "data/all/expes.csv"
+  shell:
+    "cat {input.data} > {output}"
