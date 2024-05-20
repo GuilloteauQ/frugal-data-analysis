@@ -5,6 +5,8 @@ BENCHMARKS = [
 
 LANGUAGES = {
   "R-tidyverse": "R",
+  "R-polars": "R",
+  "R-tidypolars": "R",
   "awk": "awk",
   "mawk": "mawk",
   "python-pandas": "py",
@@ -32,7 +34,8 @@ rule get_size:
   output:
     "data/sizes/{lang}.csv"
   params:
-    system = "aarch64-darwin"
+    #system = "aarch64-darwin"
+    system = "x86_64-linux"
   shell:
     "python3 {input.script} {wildcards.lang} {params.system} > {output}"
 
@@ -48,7 +51,7 @@ rule run_expe:
   output:
     "data/{bench}/{lang}/{iter}.dat"
   shell:
-    "nix develop .#{wildcards.lang} --command ./{input.timing_script} {input.script} {params.dataset} {wildcards.bench} {wildcards.lang} > {output}"
+    "nix develop .#{wildcards.lang} --command bash {input.timing_script} {input.script} {params.dataset} {wildcards.bench} {wildcards.lang} > {output}"
 
 
 rule merge_sizes:

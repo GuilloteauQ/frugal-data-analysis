@@ -27,9 +27,9 @@ p_bars <- df_expes %>%
   facet_grid(name~bench, scales="free_y", labeller=labeller(name = facets.labs)) +
   ylab("") + xlab("Languages / Libs") +
   theme_bw() +
-  theme(strip.background = element_blank())
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), strip.background = element_blank())
 
-ggsave(plot=p_bars, "plot_bars.pdf", width=6, height=4)
+ggsave(plot=p_bars, "plot_bars.pdf", width=6, height=5)
   
 p_pareto <- df_expes %>%
   select(-bar) %>%
