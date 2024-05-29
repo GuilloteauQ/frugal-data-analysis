@@ -9,14 +9,22 @@
 
   outputs = { self, nixpkgs, polars-r }:
     let
-      system = "x86_64-linux";
-      #system = "aarch64-darwin";
+      #system = "x86_64-linux";
+      system = "aarch64-darwin";
       polarsOverlay = final: prev: {
         polars = polars-r.packages.${system}.default;
       };
       pkgs = import nixpkgs { inherit system; overlays = [ polarsOverlay ]; };
     in
     {
+      packages.${system} = {
+        cigri-rust-polars = pkgs.rustPlatform.buildRustPackage rec {
+          pname = "cigri-rust-polars";
+          version = "0.1";
+          cargoLock.lockFile = ./benchmarks/cigri/rust-polars/Cargo.lock;
+          src = pkgs.lib.cleanSource ./benchmarks/cigri/rust-polars;
+        };
+      };
       devShells.${system} = {
         default = pkgs.mkShell {
           packages = with pkgs; [
@@ -25,6 +33,6 @@
           ];
         };
       } // builtins.listToAttrs (
-          builtins.map (x: {name = x; value = import ./workflow/envs/${x}.nix {inherit pkgs;};}) ["awk" "mawk" "python-pandas" "python-polars" "R-tidyverse" "R-polars" "R-tidypolars"]);
+          builtins.map (x: {name = x; value = import ./workflow/envs/${x}.nix {inherit pkgs;};}) ["awk" "mawk" "python-pandas" "python-polars" "R-tidyverse" "R-polars" "R-tidypolars" "rust-polars"]);
     };
 }

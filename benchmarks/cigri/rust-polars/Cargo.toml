@@ -1,0 +1,10 @@
+[package]
+name = "rust-polars"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+polars = { version = "0.40.0", features = ["lazy", "csv"] }
+polars-lazy = "0.40.0"

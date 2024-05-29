@@ -3,14 +3,18 @@ BENCHMARKS = [
   "cigri"
 ]
 
-LANGUAGES = {
+SCRIPTING_LANGUAGES = {
   "R-tidyverse": "R",
-  "R-polars": "R",
-  "R-tidypolars": "R",
+  #"R-polars": "R",
+  #"R-tidypolars": "R",
   "awk": "awk",
   "mawk": "mawk",
   "python-pandas": "py",
   "python-polars": "py",
+}
+
+COMPILED_LANGUAGES = {
+  "rust-polars" : "rs"
 }
 
 DATASETS = {
@@ -34,18 +38,18 @@ rule get_size:
   output:
     "data/sizes/{lang}.csv"
   params:
-    #system = "aarch64-darwin"
-    system = "x86_64-linux"
+    system = "aarch64-darwin"
+    #system = "x86_64-linux"
   shell:
     "python3 {input.script} {wildcards.lang} {params.system} > {output}"
 
-
-rule run_expe:
+rule run_expe_scripting:
   input:
-    script=lambda w: f"benchmarks/{w.bench}/{w.lang}/main.{LANGUAGES[w.lang]}",
-    timing_script=lambda w: f"workflow/scripts/timing_{LANGUAGES[w.lang]}.sh",
+    script=lambda w: f"benchmarks/{w.bench}/{w.lang}/main.{SCRIPTING_LANGUAGES[w.lang]}",
+    timing_script=lambda w: f"workflow/scripts/timing_{SCRIPTING_LANGUAGES[w.lang]}.sh",
   wildcard_constraints:
-    bench="|".join(BENCHMARKS)
+    bench="|".join(BENCHMARKS),
+    lang="|".join(SCRIPTING_LANGUAGES.keys())
   params:
     dataset=lambda w: DATASETS[w.bench]
   output:
@@ -54,9 +58,24 @@ rule run_expe:
     "nix develop .#{wildcards.lang} --command bash {input.timing_script} {input.script} {params.dataset} {wildcards.bench} {wildcards.lang} > {output}"
 
 
+rule run_expe_compiled:
+  input:
+    script=lambda w: f"benchmarks/{w.bench}/{w.lang}/src/main.{COMPILED_LANGUAGES[w.lang]}",
+    timing_script=lambda w: f"workflow/scripts/timing_{COMPILED_LANGUAGES[w.lang]}.sh",
+  wildcard_constraints:
+    bench="|".join(BENCHMARKS),
+    lang="|".join(COMPILED_LANGUAGES.keys())
+  params:
+    dataset=lambda w: DATASETS[w.bench]
+  output:
+    "data/{bench}/{lang}/{iter}.dat"
+  shell:
+    "nix shell .#{wildcards.bench}-{wildcards.lang} --command bash {input.timing_script} ./result/bin/{wildcards.lang} {params.dataset} {wildcards.bench} {wildcards.lang} > {output}"
+
+
 rule merge_sizes:
   input:
-    data=expand("data/sizes/{lang}.csv",lang=LANGUAGES.keys())
+    data=expand("data/sizes/{lang}.csv",lang=list(COMPILED_LANGUAGES.keys()) + list(SCRIPTING_LANGUAGES.keys()))
   output:
     "data/all/sizes.csv"
   shell:
@@ -66,7 +85,7 @@ rule merge_expes:
   input:
     data=expand("data/{bench}/{lang}/{iter}.dat",\
            bench=BENCHMARKS,\
-           lang=LANGUAGES.keys(),\
+           lang=list(COMPILED_LANGUAGES.keys()) + list(SCRIPTING_LANGUAGES.keys()),\
            iter=ITERATIONS)
   output:
     "data/all/expes.csv"
