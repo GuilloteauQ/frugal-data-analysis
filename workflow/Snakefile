@@ -1,6 +1,7 @@
 
 BENCHMARKS = [
-  "cigri"
+  "cigri",
+  "cigri-sorted"
 ]
 
 SCRIPTING_LANGUAGES = {
@@ -9,6 +10,9 @@ SCRIPTING_LANGUAGES = {
   #"R-tidypolars": "R",
   "awk": "awk",
   "mawk": "mawk",
+  "miller": "miller",
+  "duckdb": "duckdb",
+  "datamash": "datamash",
   "python-pandas": "py",
   "python-polars": "py",
 }
@@ -18,7 +22,8 @@ COMPILED_LANGUAGES = {
 }
 
 DATASETS = {
-  "cigri": "datasets/data_cigri_2013_2023.csv"
+  "cigri": "datasets/data_cigri_2013_2023.csv",
+  "cigri-sorted": "datasets/data_cigri_2013_2023_sorted.csv"
 }
 
 MAX_ITER = 3
@@ -28,6 +33,7 @@ ITERATIONS = range(0, MAX_ITER)
 rule all:
   input:
     "data/all/sizes.csv",
+    "data/all/sizes_details.csv",
     "data/all/expes.csv",
 
 rule get_size:
@@ -42,6 +48,18 @@ rule get_size:
     #system = "x86_64-linux"
   shell:
     "python3 {input.script} {wildcards.lang} {params.system} > {output}"
+
+rule get_size_details:
+  input:
+    "flake.nix",
+    "workflow/envs/{lang}.nix",
+  output:
+    "data/sizes/{lang}.dat"
+  params:
+    system = "aarch64-darwin"
+    #system = "x86_64-linux"
+  shell:
+    "nix build .#devShells.{params.system}.{wildcards.lang} -o output_nix_build_{wildcards.lang} && nix-store -qR output_nix_build_{wildcards.lang} | sed -E 's/(.*)/du -bs \\1/' | bash | sed -E 's/[[:space:]]+/,/g' | sed -E 'sW/nix/store([^-]*)-(.*)W\\2,{wildcards.lang}W' > {output} && rm output_nix_build_{wildcards.lang}"
 
 rule run_expe_scripting:
   input:
@@ -78,6 +96,14 @@ rule merge_sizes:
     data=expand("data/sizes/{lang}.csv",lang=list(COMPILED_LANGUAGES.keys()) + list(SCRIPTING_LANGUAGES.keys()))
   output:
     "data/all/sizes.csv"
+  shell:
+    "cat {input.data} > {output}"
+
+rule merge_sizes_details:
+  input:
+    data=expand("data/sizes/{lang}.dat",lang=list(COMPILED_LANGUAGES.keys()) + list(SCRIPTING_LANGUAGES.keys()) + ["empty"])
+  output:
+    "data/all/sizes_details.csv"
   shell:
     "cat {input.data} > {output}"
 

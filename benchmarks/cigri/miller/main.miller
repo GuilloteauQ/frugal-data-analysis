@@ -1,0 +1,1 @@
+mlr --csv --from $1 stats1 -g project,cluster_name -a mean,count -f duration

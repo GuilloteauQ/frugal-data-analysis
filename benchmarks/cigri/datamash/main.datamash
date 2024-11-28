@@ -1,0 +1,1 @@
+datamash --field-separator=, -H -s -g 4,5 mean 6 count 6 < $1

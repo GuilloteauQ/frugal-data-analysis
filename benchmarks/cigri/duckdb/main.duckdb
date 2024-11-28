@@ -1,0 +1,1 @@
+duckdb --csv -c "SELECT project,cluster_name,MEAN(duration),COUNT(duration) FROM '$1' GROUP BY project,cluster_name"
