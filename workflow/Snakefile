@@ -9,6 +9,7 @@ SCRIPTING_LANGUAGES = {
   #"R-polars": "R",
   #"R-tidypolars": "R",
   "awk": "awk",
+  "nushell" : "nushell",
   "mawk": "mawk",
   "miller": "miller",
   "duckdb": "duckdb",
@@ -28,6 +29,8 @@ DATASETS = {
 
 MAX_ITER = 3
 ITERATIONS = range(0, MAX_ITER)
+
+NB_ROWS = [i * 1000000 for i in range(1, 45, 10)] + [44577835]
 
 
 rule all:

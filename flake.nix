@@ -34,6 +34,6 @@
           ];
         };
       } // builtins.listToAttrs (
-          builtins.map (x: {name = x; value = import ./workflow/envs/${x}.nix {inherit pkgs;};}) ["awk" "datamash" "duckdb" "empty" "mawk" "miller" "python-pandas" "python-polars" "R-tidyverse" "R-polars" "R-tidypolars" "rust-polars"]);
+          builtins.map (x: {name = x; value = import ./workflow/envs/${x}.nix {inherit pkgs;};}) ["awk" "datamash" "duckdb" "empty" "nushell" "mawk" "miller" "python-pandas" "python-polars" "R-tidyverse" "R-polars" "R-tidypolars" "rust-polars"]);
     };
 }
